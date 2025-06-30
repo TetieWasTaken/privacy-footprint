@@ -37,7 +37,7 @@ export default function ClientHome() {
 
 	return (
 		<div className="bg-gray-900 min-h-screen py-10 px-4">
-			<div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div className="max-w-9/10 mx-auto grid grid-cols-2 md:grid-cols-3 gap-6">
 				<Card item={ip || "IP not available"} method="x-forwarded-for" description="That is your IP address" />
 				<Card
 					item={geo?.city && geo?.country ? `${geo.city}, ${geo.country}` : "Location unavailable"}
