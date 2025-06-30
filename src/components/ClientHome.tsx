@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Card from "./Card";
 
 export default function ClientHome() {
 	const [proceeded, setProceeded] = useState(false);
@@ -29,11 +30,7 @@ export default function ClientHome() {
 
 	return (
 		<div className="bg-gray-900 min-h-screen p-4">
-			<div className="bg-gray-700 rounded-lg p-6 max-w-sm w-full">
-				<h1 className="text-xl font-bold text-white mb-2">{ip ?? "Loading IP..."}</h1>
-				<p className="text-gray-300 mb-2">That is your IP address</p>
-				<p className="text-blue-400 hover:underline">Link</p>
-			</div>
+			<Card item={ip} method="x-forwarded-for" description="That is your IP address" />
 		</div>
 	);
 }
