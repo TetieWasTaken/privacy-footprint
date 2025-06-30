@@ -4,10 +4,20 @@ import { useState, useEffect } from "react";
 import Card from "./Card";
 import { Geo } from "@vercel/functions";
 
+function getOS(): string {
+	if (/Windows NT/.test(navigator.userAgent)) return "Windows";
+	if (/Mac OS X/.test(navigator.userAgent)) return "macOS";
+	if (/Android/.test(navigator.userAgent)) return "Android";
+	if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return "iOS";
+	if (/Linux/.test(navigator.userAgent)) return "Linux";
+	return "Unknown OS";
+}
+
 export default function ClientHome() {
 	const [proceeded, setProceeded] = useState(false);
 	const [ip, setIp] = useState<string | null>(null);
 	const [geo, setGeo] = useState<Geo | null>(null);
+	const [os, setOs] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (proceeded) {
@@ -20,6 +30,8 @@ export default function ClientHome() {
 				.then((res) => res.json())
 				.then((data) => setGeo(data.geo))
 				.catch(console.error);
+
+			setOs(getOS());
 		}
 	}, [proceeded]);
 
@@ -45,6 +57,11 @@ export default function ClientHome() {
 					description="That is your location"
 				/>
 				<Card item={navigator.languages.join(",")} method={"navigator"} description="List of preferred languages" />
+				<Card
+					item={os}
+					method="User Agent"
+					description="This is the operating system you're using. Depending on the system, the specific version may be revealed as well."
+				/>
 			</div>
 		</div>
 	);
