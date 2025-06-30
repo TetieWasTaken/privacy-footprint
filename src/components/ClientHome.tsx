@@ -18,6 +18,7 @@ export default function ClientHome() {
 	const [ip, setIp] = useState<string | null>(null);
 	const [geo, setGeo] = useState<Geo | null>(null);
 	const [os, setOs] = useState<string | null>(null);
+	const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
 
 	useEffect(() => {
 		if (proceeded) {
@@ -32,6 +33,15 @@ export default function ClientHome() {
 				.catch(console.error);
 
 			setOs(getOS());
+
+			if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
+				navigator.bluetooth
+					.getAvailability()
+					.then(setBluetoothAvailable)
+					.catch(() => {
+						setBluetoothAvailable(false);
+					});
+			}
 		}
 	}, [proceeded]);
 
@@ -61,7 +71,7 @@ export default function ClientHome() {
 					item={"Bluetooth access"}
 					method="Bluetooth API"
 					description="This website can interact with your bluetooth (devices)."
-					available={navigator.bluetooth?.bluetooth.getAvailability() || false}
+					available={bluetoothAvailable}
 				/>
 				<Card
 					item={os}
