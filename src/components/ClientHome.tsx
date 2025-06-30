@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Card from "./Card";
+import Loading from "@/app/loading";
 import { Geo } from "@vercel/functions";
 
 function getOS(): string {
@@ -15,24 +16,31 @@ function getOS(): string {
 
 export default function ClientHome() {
 	const [proceeded, setProceeded] = useState(false);
+
 	const [ip, setIp] = useState<string | null>(null);
 	const [geo, setGeo] = useState<Geo | null>(null);
 	const [os, setOs] = useState<string | null>(null);
 	const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
 
+	const [loadingIp, setLoadingIp] = useState(true);
+	const [loadingGeo, setLoadingGeo] = useState(true);
+	const [loadingBluetooth, setLoadingBluetooth] = useState(true);
+
 	useEffect(() => {
 		if (proceeded) {
+			setOs(getOS());
+
 			fetch("/api/ip")
 				.then((res) => res.json())
 				.then((data) => setIp(data.ip))
-				.catch(console.error);
+				.catch(console.error)
+				.finally(() => setLoadingIp(false));
 
 			fetch("/api/geo")
 				.then((res) => res.json())
 				.then((data) => setGeo(data.geo))
-				.catch(console.error);
-
-			setOs(getOS());
+				.catch(console.error)
+				.finally(() => setLoadingGeo(false));
 
 			if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
 				navigator.bluetooth
@@ -40,7 +48,10 @@ export default function ClientHome() {
 					.then(setBluetoothAvailable)
 					.catch(() => {
 						setBluetoothAvailable(false);
-					});
+					})
+					.finally(() => setLoadingBluetooth(false));
+			} else {
+				setLoadingBluetooth(false);
 			}
 		}
 	}, [proceeded]);
@@ -60,19 +71,35 @@ export default function ClientHome() {
 	return (
 		<div className="bg-gray-900 min-h-screen py-10 px-4">
 			<div className="max-w-9/10 mx-auto grid grid-cols-2 md:grid-cols-3 gap-6">
-				<Card item={ip || "IP not available"} method="x-forwarded-for" description="That is your IP address" />
-				<Card
-					item={geo?.city && geo?.country ? `${geo.city}, ${geo.country}` : "Location unavailable"}
-					method="Geolocation API"
-					description="That is your location"
-				/>
+				{loadingIp ? (
+					<Loading />
+				) : (
+					<Card item={ip || "IP not available"} method="x-forwarded-for" description="That is your IP address" />
+				)}
+
+				{loadingGeo ? (
+					<Loading />
+				) : (
+					<Card
+						item={geo?.city && geo?.country ? `${geo.city}, ${geo.country}` : "Location unavailable"}
+						method="Geolocation API"
+						description="That is your location"
+					/>
+				)}
+
 				<Card item={navigator.languages.join(",")} method="navigator" description="List of preferred languages" />
-				<Card
-					item={"Bluetooth access"}
-					method="Bluetooth API"
-					description="This website can interact with your bluetooth (devices)."
-					available={bluetoothAvailable}
-				/>
+
+				{loadingBluetooth ? (
+					<Loading />
+				) : (
+					<Card
+						item={"Bluetooth access"}
+						method="Bluetooth API"
+						description="This website can interact with your bluetooth (devices)."
+						available={bluetoothAvailable}
+					/>
+				)}
+
 				<Card
 					item={os}
 					method="User Agent"
