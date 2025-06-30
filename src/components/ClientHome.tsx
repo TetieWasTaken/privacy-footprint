@@ -56,7 +56,7 @@ export default function ClientHome() {
 					method="Geolocation API"
 					description="That is your location"
 				/>
-				<Card item={navigator.languages.join(",")} method={"navigator"} description="List of preferred languages" />
+				<Card item={navigator.languages.join(",")} method="navigator" description="List of preferred languages" />
 				<Card
 					item={os}
 					method="User Agent"
