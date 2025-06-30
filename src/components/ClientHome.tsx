@@ -58,6 +58,12 @@ export default function ClientHome() {
 				/>
 				<Card item={navigator.languages.join(",")} method="navigator" description="List of preferred languages" />
 				<Card
+					item={"Bluetooth access"}
+					method="Bluetooth API"
+					description="This website can interact with your bluetooth (devices)."
+					available={navigator.bluetooth?.bluetooth.getAvailability() || false}
+				/>
+				<Card
 					item={os}
 					method="User Agent"
 					description="This is the operating system you're using. Depending on the system, the specific version may be revealed as well."
