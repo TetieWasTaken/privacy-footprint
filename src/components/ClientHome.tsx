@@ -91,7 +91,7 @@ export default function ClientHome() {
 			setLoadingProxy(true);
 			setLoadingHosting(true);
 
-			fetch(`/api/ip-lookup?ip=${ip}`)
+			fetch(`/api/lookup?ip=${ip}`)
 				.then((res) => res.json())
 				.then((data) => {
 					if (data.status === "success") {
