@@ -60,8 +60,10 @@ export default function ClientHome() {
 				.then((res) => res.json())
 				.then((data) => {
 					const timestamp = parseInt(data.lastVisited);
-					if (!isNaN(timestamp)) setLastVisited(new Date(timestamp).toISOString());
-					else setLastVisited(data.lastVisited);
+					if (!isNaN(timestamp)) {
+						const offset = new Date(timestamp).getTimezoneOffset();
+						setLastVisited(new Date(new Date(timestamp).getTime() - offset * 60 * 1000).toISOString());
+					} else setLastVisited(data.lastVisited);
 				})
 				.catch(console.error)
 				.finally(() => setLoadingVisited(false));
