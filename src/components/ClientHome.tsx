@@ -21,10 +21,12 @@ export default function ClientHome() {
 	const [geo, setGeo] = useState<Geo | null>(null);
 	const [os, setOs] = useState<string | null>(null);
 	const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
+	const [lastVisited, setLastVisited] = useState<string | null>(null);
 
 	const [loadingIp, setLoadingIp] = useState(true);
 	const [loadingGeo, setLoadingGeo] = useState(true);
 	const [loadingBluetooth, setLoadingBluetooth] = useState(true);
+	const [loadingVisited, setLoadingVisited] = useState(true);
 
 	useEffect(() => {
 		if (proceeded) {
@@ -41,6 +43,16 @@ export default function ClientHome() {
 				.then((data) => setGeo(data.geo))
 				.catch(console.error)
 				.finally(() => setLoadingGeo(false));
+
+			fetch("/api/visit")
+				.then((res) => res.json())
+				.then((data) => {
+					const timestamp = parseInt(data.lastVisited);
+					if (!isNaN(timestamp)) setLastVisited(new Date(timestamp).toISOString());
+					else setLastVisited(data.lastVisited);
+				})
+				.catch(console.error)
+				.finally(() => setLoadingVisited(false));
 
 			if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
 				navigator.bluetooth
@@ -105,6 +117,12 @@ export default function ClientHome() {
 					method="User Agent"
 					description="This is the operating system you're using. Depending on the system, the specific version may be revealed as well."
 				/>
+
+				{loadingVisited ? (
+					<Loading />
+				) : (
+					<Card item={lastVisited} method="last-visited (cookie)" description="Last visited this website" />
+				)}
 			</div>
 		</div>
 	);
