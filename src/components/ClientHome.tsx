@@ -22,11 +22,23 @@ export default function ClientHome() {
 	const [os, setOs] = useState<string | null>(null);
 	const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
 	const [lastVisited, setLastVisited] = useState<string | null>(null);
+	const [ISP, setISP] = useState<string | null>(null);
+	const [currency, setCurrency] = useState<string | null>(null);
+	const [reverse, setReverse] = useState<string | null>(null);
+	const [mobile, setMobile] = useState<boolean | null>(null);
+	const [proxy, setProxy] = useState<boolean | null>(null);
+	const [hosting, setHosting] = useState<boolean | null>(null);
 
 	const [loadingIp, setLoadingIp] = useState(true);
 	const [loadingGeo, setLoadingGeo] = useState(true);
 	const [loadingBluetooth, setLoadingBluetooth] = useState(true);
 	const [loadingVisited, setLoadingVisited] = useState(true);
+	const [loadingISP, setLoadingISP] = useState(true);
+	const [loadingCurrency, setLoadingCurrency] = useState(true);
+	const [loadingReverse, setLoadingReverse] = useState(true);
+	const [loadingMobile, setLoadingMobile] = useState(true);
+	const [loadingProxy, setLoadingProxy] = useState(true);
+	const [loadingHosting, setLoadingHosting] = useState(true);
 
 	useEffect(() => {
 		if (proceeded) {
@@ -67,6 +79,56 @@ export default function ClientHome() {
 			}
 		}
 	}, [proceeded]);
+
+	useEffect(() => {
+		if (ip && ip !== "0.0.0.0") {
+			setLoadingISP(true);
+			setLoadingCurrency(true);
+			setLoadingReverse(true);
+			setLoadingMobile(true);
+			setLoadingProxy(true);
+			setLoadingHosting(true);
+
+			fetch(`/api/ip-lookup?ip=${ip}`)
+				.then((res) => res.json())
+				.then((data) => {
+					if (data.status === "success") {
+						setISP(data.isp);
+						setCurrency(data.currency);
+						setReverse(data.reverse);
+						setMobile(data.mobile);
+						setProxy(data.proxy);
+						setHosting(data.hosting);
+					} else {
+						console.log(data.message);
+						setISP(null);
+						setCurrency(null);
+						setReverse(null);
+						setMobile(null);
+						setProxy(null);
+						setHosting(null);
+					}
+				})
+				.catch((err) => {
+					console.error(err);
+					setISP(null);
+					setCurrency(null);
+					setReverse(null);
+					setMobile(null);
+					setProxy(null);
+					setHosting(null);
+				})
+				.finally(() => {
+					setLoadingISP(false);
+					setLoadingCurrency(false);
+					setLoadingReverse(false);
+					setLoadingMobile(false);
+					setLoadingProxy(false);
+					setLoadingHosting(false);
+				});
+		}
+		// Only run when ip changes and proceeded is true
+	}, [ip]);
 
 	if (!proceeded) {
 		return (
@@ -122,6 +184,50 @@ export default function ClientHome() {
 					<Loading />
 				) : (
 					<Card item={lastVisited} method="last-visited (cookie)" description="Last visited this website" />
+				)}
+
+				{loadingISP ? (
+					<Loading />
+				) : (
+					<Card item={ISP || "ISP not available"} method="IP-API" description="Your Internet Service Provider" />
+				)}
+
+				{loadingCurrency ? (
+					<Loading />
+				) : (
+					<Card item={currency || "Currency not available"} method="IP-API" description="Your local currency" />
+				)}
+
+				{loadingReverse ? (
+					<Loading />
+				) : (
+					<Card item={reverse || "Reverse DNS not available"} method="IP-API" description="Your reverse DNS" />
+				)}
+
+				{loadingMobile ? (
+					<Loading />
+				) : (
+					<Card
+						item={mobile ? "Yes" : "No"}
+						method="IP-API"
+						description="Whether you're using a mobile network or not"
+					/>
+				)}
+
+				{loadingProxy ? (
+					<Loading />
+				) : (
+					<Card item={proxy ? "Yes" : "No"} method="IP-API" description="Whether you're using a proxy or not" />
+				)}
+
+				{loadingHosting ? (
+					<Loading />
+				) : (
+					<Card
+						item={hosting ? "Yes" : "No"}
+						method="IP-API"
+						description="Whether you're using a hosting service or not"
+					/>
 				)}
 			</div>
 		</div>
