@@ -14,123 +14,263 @@ function getOS(): string {
 	return "Unknown OS";
 }
 
+type ItemKey =
+	| "ip"
+	| "geo"
+	| "languages"
+	| "bluetooth"
+	| "os"
+	| "lastVisited"
+	| "isp"
+	| "currency"
+	| "reverse"
+	| "mobile"
+	| "proxy"
+	| "hosting";
+
+type Item = {
+	label: string;
+	method: string;
+	description: string;
+	value: string | boolean | null;
+	loading: boolean;
+	available?: boolean;
+};
+
 export default function ClientHome() {
 	const [proceeded, setProceeded] = useState(false);
 
-	const [ip, setIp] = useState<string | null>(null);
-	const [geo, setGeo] = useState<Geo | null>(null);
-	const [os, setOs] = useState<string | null>(null);
-	const [bluetoothAvailable, setBluetoothAvailable] = useState(false);
-	const [lastVisited, setLastVisited] = useState<string | null>(null);
-	const [ISP, setISP] = useState<string | null>(null);
-	const [currency, setCurrency] = useState<string | null>(null);
-	const [reverse, setReverse] = useState<string | null>(null);
-	const [mobile, setMobile] = useState<boolean | null>(null);
-	const [proxy, setProxy] = useState<boolean | null>(null);
-	const [hosting, setHosting] = useState<boolean | null>(null);
-
-	const [loadingIp, setLoadingIp] = useState(true);
-	const [loadingGeo, setLoadingGeo] = useState(true);
-	const [loadingBluetooth, setLoadingBluetooth] = useState(true);
-	const [loadingVisited, setLoadingVisited] = useState(true);
-	const [loadingISP, setLoadingISP] = useState(true);
-	const [loadingCurrency, setLoadingCurrency] = useState(true);
-	const [loadingReverse, setLoadingReverse] = useState(true);
-	const [loadingMobile, setLoadingMobile] = useState(true);
-	const [loadingProxy, setLoadingProxy] = useState(true);
-	const [loadingHosting, setLoadingHosting] = useState(true);
+	const [items, setItems] = useState<Record<ItemKey, Item>>({
+		ip: {
+			label: "IP Address",
+			method: "x-forwarded-for",
+			description: "That is your IP address",
+			value: null,
+			loading: true,
+		},
+		geo: {
+			label: "Location",
+			method: "Geolocation API",
+			description: "That is your location",
+			value: null,
+			loading: true,
+		},
+		languages: {
+			label: "Languages",
+			method: "navigator",
+			description: "List of preferred languages",
+			value: typeof navigator !== "undefined" ? navigator.languages.join(",") : "",
+			loading: false,
+		},
+		bluetooth: {
+			label: "Bluetooth access",
+			method: "Bluetooth API",
+			description: "This website can interact with your bluetooth (devices).",
+			value: false,
+			loading: true,
+			available: false,
+		},
+		os: {
+			label: "Operating System",
+			method: "User Agent",
+			description:
+				"This is the operating system you're using. Depending on the system, the specific version may be revealed as well.",
+			value: null,
+			loading: false,
+		},
+		lastVisited: {
+			label: "Last Visited",
+			method: "last-visited (cookie)",
+			description: "Last visited this website",
+			value: null,
+			loading: true,
+		},
+		isp: {
+			label: "ISP",
+			method: "IP-API",
+			description: "Your Internet Service Provider",
+			value: null,
+			loading: true,
+		},
+		currency: {
+			label: "Currency",
+			method: "IP-API",
+			description: "Your local currency",
+			value: null,
+			loading: true,
+		},
+		reverse: {
+			label: "Reverse DNS",
+			method: "IP-API",
+			description: "Your reverse DNS",
+			value: null,
+			loading: true,
+		},
+		mobile: {
+			label: "Mobile Network",
+			method: "IP-API",
+			description: "Whether you're using a mobile network or not",
+			value: null,
+			loading: true,
+		},
+		proxy: {
+			label: "Proxy",
+			method: "IP-API",
+			description: "Whether you're using a proxy or not",
+			value: null,
+			loading: true,
+		},
+		hosting: {
+			label: "Hosting",
+			method: "IP-API",
+			description: "Whether you're using a hosting service or not",
+			value: null,
+			loading: true,
+		},
+	});
 
 	useEffect(() => {
-		if (proceeded) {
-			setOs(getOS());
+		if (!proceeded) return;
 
-			fetch("/api/ip")
-				.then((res) => res.json())
-				.then((data) => setIp(data.ip))
-				.catch(console.error)
-				.finally(() => setLoadingIp(false));
+		setItems((prev) => ({
+			...prev,
+			os: { ...prev.os, value: getOS() },
+			languages: { ...prev.languages, value: navigator.languages.join(",") },
+		}));
 
-			fetch("/api/geo")
-				.then((res) => res.json())
-				.then((data) => setGeo(data.geo))
-				.catch(console.error)
-				.finally(() => setLoadingGeo(false));
+		fetch("/api/ip")
+			.then((res) => res.json())
+			.then((data) =>
+				setItems((prev) => ({
+					...prev,
+					ip: { ...prev.ip, value: data.ip, loading: false },
+				}))
+			)
+			.catch(() =>
+				setItems((prev) => ({
+					...prev,
+					ip: { ...prev.ip, value: "IP not available", loading: false },
+				}))
+			);
 
-			fetch("/api/visit")
-				.then((res) => res.json())
-				.then((data) => {
-					const timestamp = parseInt(data.lastVisited);
-					if (!isNaN(timestamp)) {
-						const offset = new Date(timestamp).getTimezoneOffset();
-						setLastVisited(new Date(new Date(timestamp).getTime() - offset * 60 * 1000).toISOString());
-					} else setLastVisited(data.lastVisited);
-				})
-				.catch(console.error)
-				.finally(() => setLoadingVisited(false));
+		fetch("/api/geo")
+			.then((res) => res.json())
+			.then((data) =>
+				setItems((prev) => ({
+					...prev,
+					geo: {
+						...prev.geo,
+						value:
+							data.geo?.city && data.geo?.country ? `${data.geo.city}, ${data.geo.country}` : "Location unavailable",
+						loading: false,
+					},
+				}))
+			)
+			.catch(() =>
+				setItems((prev) => ({
+					...prev,
+					geo: { ...prev.geo, value: "Location unavailable", loading: false },
+				}))
+			);
 
-			if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
-				navigator.bluetooth
-					.getAvailability()
-					.then(setBluetoothAvailable)
-					.catch(() => {
-						setBluetoothAvailable(false);
-					})
-					.finally(() => setLoadingBluetooth(false));
-			} else {
-				setLoadingBluetooth(false);
-			}
+		fetch("/api/visit")
+			.then((res) => res.json())
+			.then((data) => {
+				const timestamp = parseInt(data.lastVisited);
+				let lastVisited: string | null = data.lastVisited;
+				if (!isNaN(timestamp)) {
+					const offset = new Date(timestamp).getTimezoneOffset();
+					lastVisited = new Date(new Date(timestamp).getTime() - offset * 60 * 1000).toISOString();
+				}
+				setItems((prev) => ({
+					...prev,
+					lastVisited: { ...prev.lastVisited, value: lastVisited, loading: false },
+				}));
+			})
+			.catch(() =>
+				setItems((prev) => ({
+					...prev,
+					lastVisited: { ...prev.lastVisited, value: null, loading: false },
+				}))
+			);
+
+		if (navigator.bluetooth && navigator.bluetooth.getAvailability) {
+			navigator.bluetooth
+				.getAvailability()
+				.then((available) =>
+					setItems((prev) => ({
+						...prev,
+						bluetooth: { ...prev.bluetooth, value: "Bluetooth access", available, loading: false },
+					}))
+				)
+				.catch(() =>
+					setItems((prev) => ({
+						...prev,
+						bluetooth: { ...prev.bluetooth, value: "Bluetooth access", available: false, loading: false },
+					}))
+				);
+		} else {
+			setItems((prev) => ({
+				...prev,
+				bluetooth: { ...prev.bluetooth, value: "Bluetooth access", available: false, loading: false },
+			}));
 		}
 	}, [proceeded]);
 
 	useEffect(() => {
-		if (ip && ip !== "0.0.0.0") {
-			setLoadingISP(true);
-			setLoadingCurrency(true);
-			setLoadingReverse(true);
-			setLoadingMobile(true);
-			setLoadingProxy(true);
-			setLoadingHosting(true);
+		const ip = items.ip.value;
+		if (!proceeded || !ip || ip === "0.0.0.0") return;
 
-			fetch(`/api/lookup?ip=${ip}`)
-				.then((res) => res.json())
-				.then((data) => {
-					if (data.status === "success") {
-						setISP(data.isp);
-						setCurrency(data.currency);
-						setReverse(data.reverse);
-						setMobile(data.mobile);
-						setProxy(data.proxy);
-						setHosting(data.hosting);
-					} else {
-						console.log(data.message);
-						setISP(null);
-						setCurrency(null);
-						setReverse(null);
-						setMobile(null);
-						setProxy(null);
-						setHosting(null);
-					}
-				})
-				.catch((err) => {
-					console.error(err);
-					setISP(null);
-					setCurrency(null);
-					setReverse(null);
-					setMobile(null);
-					setProxy(null);
-					setHosting(null);
-				})
-				.finally(() => {
-					setLoadingISP(false);
-					setLoadingCurrency(false);
-					setLoadingReverse(false);
-					setLoadingMobile(false);
-					setLoadingProxy(false);
-					setLoadingHosting(false);
-				});
-		}
-		// Only run when ip changes and proceeded is true
-	}, [ip]);
+		const setLoading = (loading: boolean) =>
+			setItems((prev) => ({
+				...prev,
+				isp: { ...prev.isp, loading },
+				currency: { ...prev.currency, loading },
+				reverse: { ...prev.reverse, loading },
+				mobile: { ...prev.mobile, loading },
+				proxy: { ...prev.proxy, loading },
+				hosting: { ...prev.hosting, loading },
+			}));
+
+		setLoading(true);
+
+		fetch(`/api/lookup?ip=${ip}`)
+			.then((res) => res.json())
+			.then((data) => {
+				if (data.status === "success") {
+					setItems((prev) => ({
+						...prev,
+						isp: { ...prev.isp, value: data.isp, loading: false },
+						currency: { ...prev.currency, value: data.currency, loading: false },
+						reverse: { ...prev.reverse, value: data.reverse, loading: false },
+						mobile: { ...prev.mobile, value: data.mobile ? "Yes" : "No", loading: false },
+						proxy: { ...prev.proxy, value: data.proxy ? "Yes" : "No", loading: false },
+						hosting: { ...prev.hosting, value: data.hosting ? "Yes" : "No", loading: false },
+					}));
+				} else {
+					setItems((prev) => ({
+						...prev,
+						isp: { ...prev.isp, value: null, loading: false },
+						currency: { ...prev.currency, value: null, loading: false },
+						reverse: { ...prev.reverse, value: null, loading: false },
+						mobile: { ...prev.mobile, value: null, loading: false },
+						proxy: { ...prev.proxy, value: null, loading: false },
+						hosting: { ...prev.hosting, value: null, loading: false },
+					}));
+				}
+			})
+			.catch(() =>
+				setItems((prev) => ({
+					...prev,
+					isp: { ...prev.isp, value: null, loading: false },
+					currency: { ...prev.currency, value: null, loading: false },
+					reverse: { ...prev.reverse, value: null, loading: false },
+					mobile: { ...prev.mobile, value: null, loading: false },
+					proxy: { ...prev.proxy, value: null, loading: false },
+					hosting: { ...prev.hosting, value: null, loading: false },
+				}))
+			);
+	}, [items.ip.value, proceeded]);
 
 	if (!proceeded) {
 		return (
@@ -144,93 +284,37 @@ export default function ClientHome() {
 		);
 	}
 
+	const itemOrder: ItemKey[] = [
+		"ip",
+		"geo",
+		"languages",
+		"bluetooth",
+		"os",
+		"lastVisited",
+		"isp",
+		"currency",
+		"reverse",
+		"mobile",
+		"proxy",
+		"hosting",
+	];
+
 	return (
 		<div className="bg-gray-900 min-h-screen py-10 px-4">
 			<div className="max-w-9/10 mx-auto grid grid-cols-2 md:grid-cols-3 gap-6">
-				{loadingIp ? (
-					<Loading />
-				) : (
-					<Card item={ip || "IP not available"} method="x-forwarded-for" description="That is your IP address" />
-				)}
-
-				{loadingGeo ? (
-					<Loading />
-				) : (
-					<Card
-						item={geo?.city && geo?.country ? `${geo.city}, ${geo.country}` : "Location unavailable"}
-						method="Geolocation API"
-						description="That is your location"
-					/>
-				)}
-
-				<Card item={navigator.languages.join(",")} method="navigator" description="List of preferred languages" />
-
-				{loadingBluetooth ? (
-					<Loading />
-				) : (
-					<Card
-						item={"Bluetooth access"}
-						method="Bluetooth API"
-						description="This website can interact with your bluetooth (devices)."
-						available={bluetoothAvailable}
-					/>
-				)}
-
-				<Card
-					item={os}
-					method="User Agent"
-					description="This is the operating system you're using. Depending on the system, the specific version may be revealed as well."
-				/>
-
-				{loadingVisited ? (
-					<Loading />
-				) : (
-					<Card item={lastVisited} method="last-visited (cookie)" description="Last visited this website" />
-				)}
-
-				{loadingISP ? (
-					<Loading />
-				) : (
-					<Card item={ISP || "ISP not available"} method="IP-API" description="Your Internet Service Provider" />
-				)}
-
-				{loadingCurrency ? (
-					<Loading />
-				) : (
-					<Card item={currency || "Currency not available"} method="IP-API" description="Your local currency" />
-				)}
-
-				{loadingReverse ? (
-					<Loading />
-				) : (
-					<Card item={reverse || "Reverse DNS not available"} method="IP-API" description="Your reverse DNS" />
-				)}
-
-				{loadingMobile ? (
-					<Loading />
-				) : (
-					<Card
-						item={mobile ? "Yes" : "No"}
-						method="IP-API"
-						description="Whether you're using a mobile network or not"
-					/>
-				)}
-
-				{loadingProxy ? (
-					<Loading />
-				) : (
-					<Card item={proxy ? "Yes" : "No"} method="IP-API" description="Whether you're using a proxy or not" />
-				)}
-
-				{loadingHosting ? (
-					<Loading />
-				) : (
-					<Card
-						item={hosting ? "Yes" : "No"}
-						method="IP-API"
-						description="Whether you're using a hosting service or not"
-					/>
-				)}
+				{itemOrder.map((key) => {
+					const item = items[key];
+					if (item.loading) return <Loading key={key} />;
+					return (
+						<Card
+							key={key}
+							item={item.value?.toString() || null}
+							method={item.method}
+							description={item.description}
+							available={item.available === undefined ? (item.value ? true : false) : item.available}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
