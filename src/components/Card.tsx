@@ -2,7 +2,7 @@ interface CardProps {
 	item: string | null;
 	method: string;
 	description: string;
-	link?: { href: string; title: string };
+	link?: string;
 	available?: boolean;
 }
 
@@ -18,12 +18,12 @@ export default function Card({ item, method, description, link, available = true
 			<p className="text-sm text-gray-400">{description}</p>
 			{link && (
 				<a
-					href={link.href}
+					href={link}
 					className="text-blue-400 hover:underline mt-2 inline-block"
 					target="_blank"
 					rel="noopener noreferrer"
 				>
-					{link.title}
+					Learn how to protect obscure this
 				</a>
 			)}
 		</div>
